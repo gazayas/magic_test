@@ -1,9 +1,9 @@
 <script>
   function initializeMutationObserver(){
     window.mutationObserver = new MutationObserver(function(mutations) {
-      console.log("Mutation observed")
+      console.log("Mutation observed");
       if (!window.target) {
-        console.log("There is no window.target element. Quitting the mutation callback function");
+        console.log("There is no window.target element. Quitting the mutation callback function.");
         return;
       }
 

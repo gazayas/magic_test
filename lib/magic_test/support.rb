@@ -6,7 +6,7 @@ module MagicTest
 
       filepath, line = get_last_caller(caller)
 
-      contents = File.open(filepath).read.lines
+      contents = File.read(filepath).lines
       chunks = contents.each_slice(line.to_i - 1 + @test_lines_written).to_a
       indentation = chunks[1].first.match(/^(\s*)/)[0]
       chunks.first << indentation + "assert(page.has_content?('#{selected_text.gsub("'", "\\\\'")}'))" + "\n"
@@ -24,37 +24,43 @@ module MagicTest
     def flush
       filepath, line = get_last_caller(caller)
 
-      contents = File.open(filepath).read.lines
+      contents = File.read(filepath).lines
       chunks = contents.each_slice(line.to_i - 1 + @test_lines_written).to_a
       indentation = chunks[1].first.match(/^(\s*)/)[0]
       output = page.evaluate_script("JSON.parse(sessionStorage.getItem('testingOutput'))")
-      puts
-      puts "javascript recorded on the front-end looks like this:"
-      puts output
-      puts
-      puts "(writing that to `#{filepath}`.)"
-      if output
+
+      if output.any?
+        puts
+        puts "JavaScript recorded on the front-end looks like this:"
+        puts output
+        puts
+        puts "(writing that to `#{filepath}`.)"
+
         output.each do |last|
-          chunks.first << indentation + "#{last["action"]} #{last["target"]}#{last["options"]}" + "\n"
+          chunks.first << indentation + "#{last["action"]} #{last["target"]}#{last["options"]}".strip + "\n"
           @test_lines_written += 1
         end
         contents = chunks.flatten.join
         File.open(filepath, "w") do |file|
           file.puts(contents)
         end
+
         # clear the testing output now.
         empty_cache
+        true
       else
-        puts "`window.testingOutput` was empty in the browser. Something must be wrong on the browser side."
+        puts
+        puts "No Javascript was recorded, please try again."
+        puts
+        false
       end
-      true
     end
 
     def ok
       filepath, line = get_last_caller(caller)
 
       puts "(writing that to `#{filepath}`.)"
-      contents = File.open(filepath).read.lines
+      contents = File.read(filepath).lines
       chunks = contents.each_slice(line.to_i - 1 + @test_lines_written).to_a
       indentation = chunks[1].first.match(/^(\s*)/)[0]
       get_last.each do |last|
@@ -91,11 +97,11 @@ module MagicTest
 
     def magic_test_pry_hook
       Pry.hooks.add_hook(:before_session, "magic_test") do |output, binding, pry|
-        Pry.hooks.delete_hook(:before_session, 'magic_test')
-        magic_test_file_index = pry.backtrace.index{|line| line.include?(__FILE__)}
+        Pry.hooks.delete_hook(:before_session, "magic_test")
+        magic_test_file_index = pry.backtrace.index { |line| line.include?(__FILE__) }
         # walk up backtrace until finding the original caller
-        until pry.backtrace[magic_test_file_index + 1].include?(pry.last_file) do
-          pry.run_command('up')
+        until pry.backtrace[magic_test_file_index + 1].include?(pry.last_file)
+          pry.run_command("up")
         end
       end
     end
