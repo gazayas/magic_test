@@ -6,14 +6,15 @@
         console.log("There is no window.target element. Quitting the mutation callback function.");
         return;
       }
-      var options = "";
-      var targetClass = window.target.classList[0] ? `.${window.target.classList[0]}` : "";
-      var text = window.target.innerText ? `', text: '${window.target.innerText}` : "";
-      var action = `${finderForElement(window.target)}.hover`;
+
+      // TODO: Remove this if we don't need it.
+      // var targetClass = window.target.classList[0] ? `.${window.target.classList[0]}` : ""
+      // var text = window.target.innerText ? `', text: '${window.target.innerText}` : ""
       // var action = `find('${window.target.localName}${targetClass}${text}').hover`;
-      var target = "";
+
+      var action = `${finderForElement(window.target)}.hover`;
       var testingOutput = JSON.parse(sessionStorage.getItem("testingOutput"));
-      testingOutput.push({action: action, target: target, options: options});
+      testingOutput.push({action: action, target: "", options: ""});
       sessionStorage.setItem("testingOutput", JSON.stringify(testingOutput));
     });
   }
